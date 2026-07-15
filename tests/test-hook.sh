@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -eu
+
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+TEST_DIR=$(mktemp -d)
+trap 'rm -rf "$TEST_DIR"' EXIT HUP INT TERM
+
+mkdir -p "$TEST_DIR/bin" "$TEST_DIR/state"
+
+printf '%s\n' \
+    '#!/bin/sh' \
+    'case "$1" in' \
+    '  display-message) printf "%s\n" "${FAKE_PANE_PID:-4242}" ;;' \
+    '  refresh-client) exit 0 ;;' \
+    '  *) exit 1 ;;' \
+    'esac' >"$TEST_DIR/bin/tmux"
+chmod +x "$TEST_DIR/bin/tmux"
+
+PATH="$TEST_DIR/bin:$PATH" \
+TMUX_PANE='%7' \
+FAKE_PANE_PID=4242 \
+CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/claude-hook.sh" working </dev/null
+
+state_file="$TEST_DIR/state/pane-7"
+[ -f "$state_file" ]
+
+tab=$(printf '\t')
+IFS="$tab" read -r state updated claude_pid pane_pid <"$state_file"
+[ "$state" = working ]
+[ "$pane_pid" = 4242 ]
+case "$updated:$claude_pid" in
+    *[!0-9:]*|:*|*:) exit 1 ;;
+esac
+
+# A hook outside tmux must be a harmless no-op.
+env -u TMUX_PANE \
+    PATH="$TEST_DIR/bin:$PATH" \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/claude-hook.sh" error </dev/null
+
+printf '%s\n' 'test-hook: ok'
+
