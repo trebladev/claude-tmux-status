@@ -9,9 +9,9 @@
 | 🟢 绿色 | 正在运行 | 提交 prompt 后，以及 Claude 调用工具时 |
 | 🟡 黄色 | 等待输入 | 启动完成、回答结束、等待权限或用户输入时 |
 | 🔴 红色 | 错误 | 当前 turn 因 API、认证、限流等错误结束时 |
-| ⚪ 灰色 | 已停止 | Claude 正常退出，或记录的 Claude 进程已消失 |
+| ⚪ 灰色 | 已停止 | Claude 正常退出，或记录的 Claude 进程已消失；默认隐藏 |
 
-一个 window 有多个 pane 时只显示一个圆点，优先级是：`错误 > 等待 > 运行 > 停止`。从未启动过 Claude 的 window 不显示圆点。
+一个 window 有多个 pane 时只显示一个圆点，优先级是：`错误 > 等待 > 运行 > 停止`。从未启动过 Claude，或 Claude 已经退出的 window 默认不显示圆点。
 
 ## 安装
 
@@ -51,7 +51,7 @@ set -g @claude-status-working-colour 'colour40'
 set -g @claude-status-waiting-colour '#ffff00'
 set -g @claude-status-error-colour 'colour196'
 set -g @claude-status-stopped-colour 'colour244'
-set -g @claude-status-show-stopped 'on' # 设为 off 可隐藏灰点
+set -g @claude-status-show-stopped 'off' # 设为 on 可显示停止后的灰点
 ```
 
 插件会在现有的 `window-status-format` 和 `window-status-current-format` 末尾追加 `#{E:@claude-tmux-status}`，不会替换你的 window 样式。

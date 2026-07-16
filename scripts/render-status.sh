@@ -71,7 +71,7 @@ IFS=$old_ifs
 [ -n "$best_state" ] || exit 0
 
 if [ "$best_state" = stopped ] && \
-    [ "$(tmux_option '@claude-status-show-stopped' 'on')" = off ]; then
+    [ "$(tmux_option '@claude-status-show-stopped' 'off')" = off ]; then
     exit 0
 fi
 

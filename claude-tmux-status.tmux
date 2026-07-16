@@ -33,7 +33,7 @@ set_default_option '@claude-status-working-colour' 'colour40'
 set_default_option '@claude-status-waiting-colour' '#ffff00'
 set_default_option '@claude-status-error-colour' 'colour196'
 set_default_option '@claude-status-stopped-colour' 'colour244'
-set_default_option '@claude-status-show-stopped' 'on'
+set_default_option '@claude-status-show-stopped' 'off'
 set_default_option '@claude-tmux-status-generation' '0'
 
 tmux set-option -gq '@claude-tmux-status' \

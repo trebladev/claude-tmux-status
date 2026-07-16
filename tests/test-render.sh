@@ -12,7 +12,11 @@ printf '%s\n' \
     '#!/bin/sh' \
     'case "$1" in' \
     '  list-panes) printf "%b" "$FAKE_PANES" ;;' \
-    '  show-option) exit 0 ;;' \
+    '  show-option)' \
+    '    if [ "${3:-}" = "@claude-status-show-stopped" ]; then' \
+    '      printf "%s" "${FAKE_SHOW_STOPPED:-}"' \
+    '    fi' \
+    '    ;;' \
     '  *) exit 1 ;;' \
     'esac' >"$TEST_DIR/bin/tmux"
 chmod +x "$TEST_DIR/bin/tmux"
@@ -38,10 +42,18 @@ output=$(PATH="$TEST_DIR/bin:$PATH" \
     "$ROOT/scripts/render-status.sh" '@1')
 [ "$output" = '#[fg=colour196]●#[default]' ]
 
-# A dead Claude PID degrades to stopped instead of leaving a stale green dot.
+# A dead Claude PID is hidden instead of leaving a stale status dot.
 printf 'working\t1\t99999999\t101\n' >"$TEST_DIR/state/pane-1"
 output=$(PATH="$TEST_DIR/bin:$PATH" \
     FAKE_PANES='%1|101\n' \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/render-status.sh" '@1')
+[ -z "$output" ]
+
+# Users can opt back into the stopped indicator explicitly.
+output=$(PATH="$TEST_DIR/bin:$PATH" \
+    FAKE_PANES='%1|101\n' \
+    FAKE_SHOW_STOPPED=on \
     CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
     "$ROOT/scripts/render-status.sh" '@1')
 [ "$output" = '#[fg=colour244]●#[default]' ]
