@@ -17,13 +17,13 @@
 
 ### TPM
 
-把插件加入 `~/.tmux.conf`（把仓库名替换成你的实际 GitHub 地址）：
+把插件加入 `~/.tmux.conf`：
 
 ```tmux
-set -g @plugin 'your-name/claude-tmux-status'
+set -g @plugin 'trebladev/claude-tmux-status'
 ```
 
-然后按 `prefix + I` 安装，或重新加载 tmux 配置。插件加载时会安全地把自己的 hooks 合并进 `~/.claude/settings.json`，不会覆盖已有配置。
+如果同时使用 Catppuccin，请把本插件声明放在 Catppuccin 后面，让主题先生成 window 格式。然后按 `prefix + I` 安装。插件加载时会安全地把自己的 hooks 合并进 `~/.claude/settings.json`，不会覆盖已有配置。
 
 ### 本地目录
 
@@ -47,11 +47,47 @@ tmux source-file ~/.tmux.conf
 
 ```tmux
 set -g @claude-status-icon '●'
+set -g @claude-status-theme 'custom'
 set -g @claude-status-working-colour 'colour40'
 set -g @claude-status-waiting-colour '#ffff00'
 set -g @claude-status-error-colour 'colour196'
 set -g @claude-status-stopped-colour 'colour244'
+set -g @claude-status-auto-contrast 'on' # 与状态栏背景过近时自动换成对比色
 set -g @claude-status-show-stopped 'off' # 设为 on 可显示停止后的灰点
+```
+
+### 主题预设
+
+选择预设后不需要再逐个设置四种状态颜色：
+
+```tmux
+# 自动跟随 @catppuccin_flavor
+set -g @claude-status-theme 'catppuccin'
+
+# 或固定使用某个 flavor
+set -g @claude-status-theme 'catppuccin-frappe'
+```
+
+可用值：
+
+| 预设 | 运行 | 等待 | 错误 | 停止 |
+|---|---|---|---|---|
+| `catppuccin-latte` | `#40a02b` | `#df8e1d` | `#d20f39` | `#7c7f93` |
+| `catppuccin-frappe` | `#a6d189` | `#e5c890` | `#e78284` | `#949cbb` |
+| `catppuccin-macchiato` | `#a6da95` | `#eed49f` | `#ed8796` | `#939ab7` |
+| `catppuccin-mocha` | `#a6e3a1` | `#f9e2af` | `#f38ba8` | `#9399b2` |
+| `custom` | 单独配置 | 单独配置 | 单独配置 | 单独配置 |
+
+`catppuccin` 会读取 `@catppuccin_flavor` 并自动选择对应预设；未设置 flavor 时使用 `mocha`。选择固定预设时，预设颜色优先于单独的颜色选项。使用 `custom` 可继续自由设置每一种颜色。
+
+### 自动对比
+
+自动对比默认开启。插件会读取 tmux 的 `status-style`，当圆点颜色与状态栏背景过于接近时，优先使用状态栏文字颜色；如果文字颜色也无法形成明显对比，则自动使用黑色或白色。它支持十六进制颜色、基础命名颜色以及 `colour0`–`colour255`。如果背景使用终端自身的 `default` 颜色，tmux 无法得知其实际 RGB 值，插件会保留原始圆点颜色。
+
+如需始终使用配置中的原始颜色，可以关闭：
+
+```tmux
+set -g @claude-status-auto-contrast 'off'
 ```
 
 插件会在现有的 `window-status-format` 和 `window-status-current-format` 末尾追加 `#{E:@claude-tmux-status}`，不会替换你的 window 样式。
@@ -72,7 +108,7 @@ set -g @claude-status-show-stopped 'off' # 设为 on 可显示停止后的灰点
 - `SessionEnd` 将状态设为停止。
 - 状态文件位于 `/tmp/claude-tmux-status-<uid>/`，只包含状态、更新时间和进程 ID，权限受当前用户的 `umask 077` 保护。
 - `claude --bare` 会跳过 hooks，因此不会显示实时状态。
-- `kill -9` 不会触发 `SessionEnd`，渲染器会通过 PID 存活检查自动降级为灰色。
+- `kill -9` 不会触发 `SessionEnd`，渲染器会通过 PID 存活检查自动识别为停止；停止圆点默认隐藏。
 
 运行测试：
 

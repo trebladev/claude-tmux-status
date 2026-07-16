@@ -13,9 +13,11 @@ printf '%s\n' \
     'case "$1" in' \
     '  list-panes) printf "%b" "$FAKE_PANES" ;;' \
     '  show-option)' \
-    '    if [ "${3:-}" = "@claude-status-show-stopped" ]; then' \
-    '      printf "%s" "${FAKE_SHOW_STOPPED:-}"' \
-    '    fi' \
+    '    case "${3:-}" in' \
+    '      @claude-status-show-stopped) printf "%s" "${FAKE_SHOW_STOPPED:-}" ;;' \
+    '      @claude-status-auto-contrast) printf "%s" "${FAKE_AUTO_CONTRAST:-}" ;;' \
+    '      status-style) printf "%s" "${FAKE_STATUS_STYLE:-}" ;;' \
+    '    esac' \
     '    ;;' \
     '  *) exit 1 ;;' \
     'esac' >"$TEST_DIR/bin/tmux"
@@ -41,6 +43,32 @@ output=$(PATH="$TEST_DIR/bin:$PATH" \
     CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
     "$ROOT/scripts/render-status.sh" '@1')
 [ "$output" = '#[fg=colour196]●#[default]' ]
+
+# A green working dot falls back to the status text colour on a green bar.
+output=$(PATH="$TEST_DIR/bin:$PATH" \
+    FAKE_PANES='%1|101\n' \
+    FAKE_STATUS_STYLE='bg=green,fg=black' \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/render-status.sh" '@1')
+[ "$output" = '#[fg=black]●#[default]' ]
+
+# Automatic contrast can be disabled when exact configured colours are needed.
+output=$(PATH="$TEST_DIR/bin:$PATH" \
+    FAKE_PANES='%1|101\n' \
+    FAKE_STATUS_STYLE='bg=green,fg=black' \
+    FAKE_AUTO_CONTRAST=off \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/render-status.sh" '@1')
+[ "$output" = '#[fg=colour40]●#[default]' ]
+
+# True-colour values are compared as RGB rather than as raw strings.
+write_state 2 waiting 202
+output=$(PATH="$TEST_DIR/bin:$PATH" \
+    FAKE_PANES='%2|202\n' \
+    FAKE_STATUS_STYLE='bg=#ffff00,fg=#000000' \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/render-status.sh" '@1')
+[ "$output" = '#[fg=#000000]●#[default]' ]
 
 # A dead Claude PID is hidden instead of leaving a stale status dot.
 printf 'working\t1\t99999999\t101\n' >"$TEST_DIR/state/pane-1"
