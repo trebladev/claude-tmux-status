@@ -74,6 +74,44 @@ append_format_marker() {
     esac
 }
 
+format_with_embedded_marker() {
+    local option="$1"
+    local separator_option="$2"
+    local value separator
+
+    value="$(tmux show-option -gv "$option")"
+    separator="$(tmux display-message -p "#{E:$separator_option}")"
+    [ -n "$separator" ] || return 1
+
+    # Relocate a marker previously appended by an older plugin version.
+    value=${value//" $FORMAT_MARKER"/}
+    value=${value//"$FORMAT_MARKER"/}
+
+    case "$value" in
+        *"$separator"*)
+            printf '%s' "${value/"$separator"/"$FORMAT_MARKER$separator"}"
+            ;;
+        *) return 1 ;;
+    esac
+}
+
+configure_format_markers() {
+    local inactive active
+
+    if inactive="$(format_with_embedded_marker \
+            'window-status-format' '@catppuccin_window_right_separator')" && \
+        active="$(format_with_embedded_marker \
+            'window-status-current-format' '@catppuccin_window_current_right_separator')"; then
+        tmux set-option -gq 'window-status-format' "$inactive"
+        tmux set-option -gq 'window-status-current-format' "$active"
+        tmux set-option -gq '@claude-status-embedded' 'on'
+    else
+        append_format_marker 'window-status-format'
+        append_format_marker 'window-status-current-format'
+        tmux set-option -gq '@claude-status-embedded' 'off'
+    fi
+}
+
 set_default_option '@claude-status-icon' '●'
 set_default_option '@claude-status-theme' 'custom'
 apply_theme "$(tmux show-option -gqv '@claude-status-theme')"
@@ -82,10 +120,9 @@ set_default_option '@claude-status-show-stopped' 'off'
 set_default_option '@claude-tmux-status-generation' '0'
 
 tmux set-option -gq '@claude-tmux-status' \
-    "#('$CURRENT_DIR/scripts/render-status.sh' '#{window_id}' '#{@claude-tmux-status-generation}')"
+    "#('$CURRENT_DIR/scripts/render-status.sh' '#{window_id}' '#{@claude-tmux-status-generation}' '#{@claude-status-embedded}')"
 
-append_format_marker 'window-status-format'
-append_format_marker 'window-status-current-format'
+configure_format_markers
 
 if command -v node >/dev/null 2>&1; then
     if ! node "$CURRENT_DIR/scripts/configure-hooks.js" install \

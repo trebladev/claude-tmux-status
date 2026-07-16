@@ -70,6 +70,13 @@ output=$(PATH="$TEST_DIR/bin:$PATH" \
     "$ROOT/scripts/render-status.sh" '@1')
 [ "$output" = '#[fg=#000000]●#[default]' ]
 
+# Embedded markers preserve the surrounding theme background and separator.
+output=$(PATH="$TEST_DIR/bin:$PATH" \
+    FAKE_PANES='%2|202\n' \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/render-status.sh" '@1' generation on)
+[ "$output" = ' #[fg=#ffff00]● ' ]
+
 # A dead Claude PID is hidden instead of leaving a stale status dot.
 printf 'working\t1\t99999999\t101\n' >"$TEST_DIR/state/pane-1"
 output=$(PATH="$TEST_DIR/bin:$PATH" \

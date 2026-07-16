@@ -2,6 +2,7 @@
 
 window_target=${1:-}
 [ -n "$window_target" ] || exit 0
+embedded=${3:-off}
 
 uid=$(id -u)
 state_dir=${CLAUDE_TMUX_STATUS_DIR:-/tmp/claude-tmux-status-$uid}
@@ -249,4 +250,8 @@ esac
 
 colour=$(contrasting_colour "$colour")
 
-printf '#[fg=%s]%s#[default]' "$colour" "$icon"
+if [ "$embedded" = on ]; then
+    printf ' #[fg=%s]%s ' "$colour" "$icon"
+else
+    printf '#[fg=%s]%s#[default]' "$colour" "$icon"
+fi

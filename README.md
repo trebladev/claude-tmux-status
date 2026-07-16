@@ -23,7 +23,7 @@
 set -g @plugin 'trebladev/claude-tmux-status'
 ```
 
-如果同时使用 Catppuccin，请把本插件声明放在 Catppuccin 后面，让主题先生成 window 格式。然后按 `prefix + I` 安装。插件加载时会安全地把自己的 hooks 合并进 `~/.claude/settings.json`，不会覆盖已有配置。
+如果同时使用 Catppuccin，请把本插件声明放在 Catppuccin 后面，让主题先生成 window 格式。插件会自动识别 Catppuccin 的 window 分隔符，把圆点放进主题色块并置于右分隔符之前。然后按 `prefix + I` 安装。插件加载时会安全地把自己的 hooks 合并进 `~/.claude/settings.json`，不会覆盖已有配置。
 
 ### 本地目录
 
