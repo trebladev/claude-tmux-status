@@ -41,7 +41,7 @@ CLAUDE_TMUX_SELECTION_FILE="$selection_file" fzf \
     --info=inline-right \
     --scrollbar='│' \
     --preview="$preview_command" \
-    --preview-window='right,55%,border-left,wrap' \
+    --preview-window='right,55%,border-left,wrap,follow' \
     --bind="$select_binding,up:up,down:down,left:backward-char,right:forward-char" \
     --tiebreak=index <"$index_file" || true
 

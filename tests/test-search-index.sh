@@ -75,7 +75,7 @@ PATH="$TEST_DIR/bin:$PATH" \
 grep -F 'up:up,down:down,left:backward-char,right:forward-char' "$fzf_args_log" >/dev/null
 grep -F 'enter:execute-silent(' "$fzf_args_log" >/dev/null
 grep -F -- '--preview=case {1} in chat)' "$fzf_args_log" >/dev/null
-grep -F -- '--preview-window=right,55%,border-left,wrap' "$fzf_args_log" >/dev/null
+grep -F -- '--preview-window=right,55%,border-left,wrap,follow' "$fzf_args_log" >/dev/null
 grep -F -- '--color=fg:#c6d0f5,bg:#303446' "$fzf_args_log" >/dev/null
 grep -F -- '--border=none' "$fzf_args_log" >/dev/null
 if grep -F 'esc:' "$fzf_args_log" >/dev/null; then

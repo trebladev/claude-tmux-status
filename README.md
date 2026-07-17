@@ -19,7 +19,7 @@
 
 - window 条目：模糊搜索所有 tmux session/window、名称和当前目录，按 Enter 切换。
 - chat 条目：模糊搜索当前仍映射到 tmux pane 的 Claude 用户消息和回复，按 Enter 跳到对应 window/pane。
-- `↑` / `↓` 选择候选；右侧实时预览 window 的 pane 内容或聊天消息正文；`Enter` 跳转，`Esc` 关闭。
+- `↑` / `↓` 选择候选；右侧实时预览 window 的 pane 内容或聊天消息正文，并默认定位到最新内容；`Enter` 跳转，`Esc` 关闭。
 
 插件按需读取 Claude 自己保存在 `~/.claude/projects/**/<session-id>.jsonl` 的 transcript，不复制聊天内容，也不索引 thinking、工具参数或工具输出。没有活动 pane 映射的旧会话不会显示，因为它们不存在可可靠跳转的 window。已使用旧版状态 hook 的 Claude 会在下一次状态事件时建立映射；首次安装 hooks 后，已经运行的 Claude Code 仍需重启一次。
 
