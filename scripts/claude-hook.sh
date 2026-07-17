@@ -42,8 +42,9 @@ trap 'rm -f "$tmp_file"' EXIT HUP INT TERM
 # drains stdin even when the input is invalid.
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if command -v node >/dev/null 2>&1; then
-    node "$script_dir/hook-metadata.js" \
-        "$meta_file" "$(date +%s)" "$PPID" "$pane_pid" >/dev/null 2>&1 || true
+    hook_scope=$(node "$script_dir/hook-metadata.js" \
+        "$meta_file" "$(date +%s)" "$PPID" "$pane_pid" 2>/dev/null) || hook_scope=
+    [ "$hook_scope" = subagent ] && exit 0
 else
     cat >/dev/null 2>&1 || true
 fi

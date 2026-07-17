@@ -53,6 +53,19 @@ if (metadata.cwd !== "/tmp/project") process.exit(1);
 if (JSON.stringify(metadata).includes("must-not-be-stored")) process.exit(1);
 ' "$meta_file"
 
+# Subagent hooks must not overwrite the main agent's state or transcript map.
+state_before=$(cat "$state_file")
+meta_before=$(cat "$meta_file")
+subagent_payload='{"session_id":"session-subagent","transcript_path":"/tmp/project/subagent.jsonl","cwd":"/tmp/project","agent_id":"agent-123","agent_type":"Explore"}'
+printf '%s' "$subagent_payload" | \
+    PATH="$TEST_DIR/bin:$PATH" \
+    TMUX_PANE='%7' \
+    FAKE_PANE_PID=4242 \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/claude-hook.sh" error
+[ "$(cat "$state_file")" = "$state_before" ]
+[ "$(cat "$meta_file")" = "$meta_before" ]
+
 
 # A hook outside tmux must be a harmless no-op.
 env -u TMUX_PANE \
@@ -61,4 +74,3 @@ env -u TMUX_PANE \
     "$ROOT/scripts/claude-hook.sh" error </dev/null
 
 printf '%s\n' 'test-hook: ok'
-

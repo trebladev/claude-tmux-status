@@ -23,6 +23,12 @@ process.stdin.on("end", () => {
     return;
   }
 
+  if (stringField(event.agent_id, 256)) {
+    process.stdout.write("subagent\n");
+    return;
+  }
+  process.stdout.write("main\n");
+
   const sessionId = stringField(event.session_id, 256);
   const transcriptPath = stringField(event.transcript_path, 8192);
   const cwd = stringField(event.cwd, 8192);

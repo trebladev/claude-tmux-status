@@ -164,6 +164,7 @@ function readTranscript(transcriptPath) {
       title = clean(entry.aiTitle);
       continue;
     }
+    if (entry.isSidechain === true) continue;
     const role =
       entry.type === "user"
         ? "user"

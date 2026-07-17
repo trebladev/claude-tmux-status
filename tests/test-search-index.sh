@@ -23,6 +23,8 @@ printf '%s\n' \
     '{"type":"user","message":{"content":"needle from user"},"isMeta":false}' \
     '{"type":"assistant","message":{"content":[{"type":"thinking","thinking":"private thought"}]}}' \
     '{"type":"assistant","message":{"content":[{"type":"text","text":"needle from assistant"}]}}' \
+    '{"type":"user","isSidechain":true,"message":{"content":"subagent user text"},"isMeta":false}' \
+    '{"type":"assistant","isSidechain":true,"message":{"content":[{"type":"text","text":"subagent assistant text"}]}}' \
     '{"type":"system","tool_input":{"command":"must-not-be-indexed"}}' \
     >"$transcript"
 
@@ -40,7 +42,7 @@ printf '%s\n' "$output" | grep -F 'main:2  editor  /work' >/dev/null
 printf '%s\n' "$output" | grep -F 'needle from user' >/dev/null
 printf '%s\n' "$output" | grep -F 'needle from assistant' >/dev/null
 case "$output" in
-    *private\ thought*|*must-not-be-indexed*) exit 1 ;;
+    *private\ thought*|*must-not-be-indexed*|*subagent*) exit 1 ;;
 esac
 
 # A reused pane id must not expose chat history from its previous process.
