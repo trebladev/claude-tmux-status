@@ -17,7 +17,7 @@
 
 按 `prefix + /` 打开统一的 fzf 弹窗：
 
-- window 条目：模糊搜索所有 tmux session/window、名称和当前目录，按 Enter 切换。
+- window 条目：模糊搜索所有 tmux session/window、名称和当前目录；有活动 Claude 的 window 会同时显示 `working`、`waiting` 或 `error` 状态，按 Enter 切换。
 - chat 条目：模糊搜索当前仍映射到 tmux pane 的 Claude 用户消息和回复，按 Enter 跳到对应 window/pane。
 - `↑` / `↓` 选择候选；右侧实时预览 window 的 pane 内容或聊天消息正文，并默认定位到最新内容；`Enter` 跳转，`Esc` 关闭。
 

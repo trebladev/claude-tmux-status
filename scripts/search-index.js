@@ -45,6 +45,19 @@ const panes = paneOutput
   .map(parsePane)
   .filter(Boolean);
 
+const stateDirIsPrivate = privateStateDir(stateDir);
+const windowStates = new Map();
+if (stateDirIsPrivate) {
+  for (const pane of panes) {
+    const state = readPaneState(pane);
+    if (!state || state === "stopped") continue;
+    const current = windowStates.get(pane.windowId);
+    if (!current || statePriority(state) > statePriority(current)) {
+      windowStates.set(pane.windowId, state);
+    }
+  }
+}
+
 const windows = new Map();
 for (const pane of panes) {
   const current = windows.get(pane.windowId);
@@ -53,17 +66,18 @@ for (const pane of panes) {
 
 for (const pane of windows.values()) {
   const location = `${pane.sessionName}:${pane.windowIndex}`;
+  const status = statusLabel(windowStates.get(pane.windowId));
   emit([
     "window",
     pane.sessionId,
     pane.windowId,
     pane.paneId,
     "",
-    `󰖯  ${location}  ${pane.windowName}  ${pane.cwd}`,
+    `󰖯  ${location}  ${pane.windowName}  ${pane.cwd}${status}`,
   ]);
 }
 
-if (!privateStateDir(stateDir)) process.exit(0);
+if (!stateDirIsPrivate) process.exit(0);
 
 for (const pane of panes) {
   const metadata = readMetadata(pane);
@@ -110,12 +124,69 @@ function privateStateDir(dir) {
   }
 }
 
+function readStateFields(pane) {
+  const paneKey = pane.paneId.replace(/^%/, "");
+  const statePath = path.join(stateDir, `pane-${paneKey}`);
+  try {
+    const fields = fs.readFileSync(statePath, "utf8").trimEnd().split("\t");
+    if (Number(fields[3]) !== pane.panePid) return null;
+    return fields;
+  } catch {
+    return null;
+  }
+}
+
+function readPaneState(pane) {
+  const fields = readStateFields(pane);
+  if (!fields) return null;
+  let state = fields[0];
+  if (!["working", "waiting", "error", "stopped"].includes(state)) return null;
+  if (state !== "stopped" && !processIsAlive(Number(fields[2]))) {
+    state = "stopped";
+  }
+  return state;
+}
+
+function processIsAlive(pid) {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error && error.code === "EPERM";
+  }
+}
+
+function statePriority(state) {
+  return { working: 2, waiting: 3, error: 4 }[state] || 0;
+}
+
+function statusLabel(state) {
+  const colours = {
+    working: "#a6d189",
+    waiting: "#e5c890",
+    error: "#e78284",
+  };
+  const colour = colours[state];
+  return colour
+    ? `  \u001b[38;2;${hexRgb(colour)}m● Claude: ${state}\u001b[0m`
+    : "";
+}
+
+function hexRgb(colour) {
+  const value = colour.slice(1);
+  return [0, 2, 4]
+    .map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16))
+    .join(";");
+}
+
 function readMetadata(pane) {
   const paneKey = pane.paneId.replace(/^%/, "");
   const statePath = path.join(stateDir, `pane-${paneKey}`);
   const metaPath = `${statePath}.meta`;
   try {
-    const state = fs.readFileSync(statePath, "utf8").trimEnd().split("\t");
+    const state = readStateFields(pane);
+    if (!state) return null;
     if (Number(state[3]) !== pane.panePid) return null;
     const metadata = JSON.parse(fs.readFileSync(metaPath, "utf8"));
     if (metadata.panePid !== pane.panePid) return null;

@@ -28,22 +28,37 @@ printf '%s\n' \
     '{"type":"system","tool_input":{"command":"must-not-be-indexed"}}' \
     >"$transcript"
 
-printf 'waiting\t1\t1111\t4242\n' >"$TEST_DIR/state/pane-7"
+printf 'waiting\t1\t%s\t4242\n' "$$" >"$TEST_DIR/state/pane-7"
+printf 'working\t1\t%s\t4243\n' "$$" >"$TEST_DIR/state/pane-8"
 printf '{"sessionId":"session-123","transcriptPath":"%s","cwd":"/work","updated":1,"claudePid":1111,"panePid":4242}\n' \
     "$transcript" >"$TEST_DIR/state/pane-7.meta"
 
 output=$(PATH="$TEST_DIR/bin:$PATH" \
-    FAKE_PANES='$1\tmain\t@1\t2\teditor\t%7\t0\t1\t4242\t/work\n' \
+    FAKE_PANES='$1\tmain\t@1\t2\teditor\t%7\t0\t1\t4242\t/work\n$1\tmain\t@1\t2\teditor\t%8\t1\t0\t4243\t/work\n$1\tmain\t@2\t3\tshell\t%9\t0\t1\t4244\t/tmp\n' \
     CLAUDE_CONFIG_DIR="$TEST_DIR/config" \
     CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
     node "$ROOT/scripts/search-index.js")
 
 printf '%s\n' "$output" | grep -F 'main:2  editor  /work' >/dev/null
+printf '%s\n' "$output" | grep -F '● Claude: waiting' >/dev/null
+if printf '%s\n' "$output" | grep -F 'main:3  shell  /tmp' | grep -F 'Claude:' >/dev/null; then
+    exit 1
+fi
 printf '%s\n' "$output" | grep -F 'needle from user' >/dev/null
 printf '%s\n' "$output" | grep -F 'needle from assistant' >/dev/null
 case "$output" in
     *private\ thought*|*must-not-be-indexed*|*subagent*) exit 1 ;;
 esac
+
+# Multiple Claude panes in one window use the same priority as the status bar.
+printf 'error\t1\t%s\t4243\n' "$$" >"$TEST_DIR/state/pane-8"
+error_output=$(PATH="$TEST_DIR/bin:$PATH" \
+    FAKE_PANES='$1\tmain\t@1\t2\teditor\t%7\t0\t1\t4242\t/work\n$1\tmain\t@1\t2\teditor\t%8\t1\t0\t4243\t/work\n' \
+    CLAUDE_CONFIG_DIR="$TEST_DIR/config" \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    node "$ROOT/scripts/search-index.js")
+printf '%s\n' "$error_output" | grep -F '● Claude: error' >/dev/null
+printf 'working\t1\t99999999\t4243\n' >"$TEST_DIR/state/pane-8"
 
 # A reused pane id must not expose chat history from its previous process.
 stale=$(PATH="$TEST_DIR/bin:$PATH" \
