@@ -1,6 +1,6 @@
 # claude-tmux-status
 
-在 tmux 的 window 标签旁显示 Claude Code 状态圆点。它使用 Claude Code 官方 lifecycle hooks，不解析终端画面，也不保存 prompt、回复或工具参数。
+在 tmux 的 window 标签旁显示 Claude Code 状态圆点，并提供统一的 window / Claude 聊天模糊搜索弹窗。它使用 Claude Code 官方 lifecycle hooks，不解析终端画面，也不另存 prompt、回复或工具参数。
 
 ## 状态
 
@@ -13,7 +13,21 @@
 
 一个 window 有多个 pane 时只显示一个圆点，优先级是：`错误 > 等待 > 运行 > 停止`。从未启动过 Claude，或 Claude 已经退出的 window 默认不显示圆点。
 
+## 搜索与跳转
+
+按 `prefix + /` 打开统一的 fzf 弹窗：
+
+- window 条目：模糊搜索所有 tmux session/window、名称和当前目录，按 Enter 切换。
+- chat 条目：模糊搜索当前仍映射到 tmux pane 的 Claude 用户消息和回复，按 Enter 跳到对应 window/pane。
+- `↑` / `↓` 选择候选；右侧实时预览 window 的 pane 内容或聊天消息正文；`Enter` 跳转，`Esc` 关闭。
+
+插件按需读取 Claude 自己保存在 `~/.claude/projects/**/<session-id>.jsonl` 的 transcript，不复制聊天内容，也不索引 thinking、工具参数或工具输出。没有活动 pane 映射的旧会话不会显示，因为它们不存在可可靠跳转的 window。已使用旧版状态 hook 的 Claude 会在下一次状态事件时建立映射；首次安装 hooks 后，已经运行的 Claude Code 仍需重启一次。
+
+
 ## 安装
+
+搜索弹窗需要 tmux 3.2 或更新版本、`fzf` 和 Node.js。状态显示本身不依赖 `fzf`。
+
 
 ### TPM
 
@@ -54,6 +68,8 @@ set -g @claude-status-error-colour 'colour196'
 set -g @claude-status-stopped-colour 'colour244'
 set -g @claude-status-auto-contrast 'on' # 与状态栏背景过近时自动换成对比色
 set -g @claude-status-show-stopped 'off' # 设为 on 可显示停止后的灰点
+set -g @claude-search-key '/'           # prefix + /；设为 off 可禁用
+
 ```
 
 ### 主题预设
@@ -106,7 +122,8 @@ set -g @claude-status-auto-contrast 'off'
 - `UserPromptSubmit` / `PreToolUse` 将状态设为运行。
 - `StopFailure` 将状态设为错误。
 - `SessionEnd` 将状态设为停止。
-- 状态文件位于 `/tmp/claude-tmux-status-<uid>/`，只包含状态、更新时间和进程 ID，权限受当前用户的 `umask 077` 保护。
+- 状态文件位于 `/tmp/claude-tmux-status-<uid>/`，包含状态、更新时间、进程 ID，以及 session ID、transcript 路径和 cwd 的私有映射；权限受当前用户的 `umask 077` 保护。
+- 聊天搜索只按需读取 Claude 原始 transcript 中的用户消息和最终回复，不把正文写入插件状态或持久化搜索索引。
 - `claude --bare` 会跳过 hooks，因此不会显示实时状态。
 - `kill -9` 不会触发 `SessionEnd`，渲染器会通过 PID 存活检查自动识别为停止；停止圆点默认隐藏。
 

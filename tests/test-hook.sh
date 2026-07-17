@@ -33,6 +33,26 @@ IFS="$tab" read -r state updated claude_pid pane_pid <"$state_file"
 case "$updated:$claude_pid" in
     *[!0-9:]*|:*|*:) exit 1 ;;
 esac
+# A valid hook payload stores only the pane-to-transcript mapping.
+payload='{"session_id":"session-123","transcript_path":"/tmp/project/session-123.jsonl","cwd":"/tmp/project","prompt":"must-not-be-stored"}'
+printf '%s' "$payload" | \
+    PATH="$TEST_DIR/bin:$PATH" \
+    TMUX_PANE='%7' \
+    FAKE_PANE_PID=4242 \
+    CLAUDE_TMUX_STATUS_DIR="$TEST_DIR/state" \
+    "$ROOT/scripts/claude-hook.sh" waiting
+
+meta_file="$TEST_DIR/state/pane-7.meta"
+[ -f "$meta_file" ]
+node -e '
+const fs = require("fs");
+const metadata = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+if (metadata.sessionId !== "session-123") process.exit(1);
+if (metadata.transcriptPath !== "/tmp/project/session-123.jsonl") process.exit(1);
+if (metadata.cwd !== "/tmp/project") process.exit(1);
+if (JSON.stringify(metadata).includes("must-not-be-stored")) process.exit(1);
+' "$meta_file"
+
 
 # A hook outside tmux must be a harmless no-op.
 env -u TMUX_PANE \

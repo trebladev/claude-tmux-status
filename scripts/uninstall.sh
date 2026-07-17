@@ -18,6 +18,17 @@ if command -v tmux >/dev/null 2>&1; then
     done
     tmux set-option -gu '@claude-tmux-status' 2>/dev/null || true
     tmux set-option -gu '@claude-tmux-status-generation' 2>/dev/null || true
+    bound_key="$(tmux show-option -gqv '@claude-search-bound-key')"
+    if [ -n "$bound_key" ]; then
+        binding="$(tmux list-keys -T prefix "$bound_key" 2>/dev/null || true)"
+        case "$binding" in
+            *"$CURRENT_DIR/search-popup.sh"*)
+                tmux unbind-key "$bound_key" 2>/dev/null || true
+                ;;
+        esac
+    fi
+    tmux set-option -gu '@claude-search-bound-key' 2>/dev/null || true
+    tmux set-option -gu '@claude-search-key' 2>/dev/null || true
     tmux refresh-client -S >/dev/null 2>&1 || true
 fi
 

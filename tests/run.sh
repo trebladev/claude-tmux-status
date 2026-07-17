@@ -6,6 +6,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
 "$ROOT/tests/test-hook.sh"
 "$ROOT/tests/test-render.sh"
+"$ROOT/tests/test-search-index.sh"
 "$ROOT/tests/test-configure-hooks.sh"
 "$ROOT/tests/test-theme-presets.sh"
 "$ROOT/tests/test-catppuccin-integration.sh"

@@ -118,11 +118,31 @@ apply_theme "$(tmux show-option -gqv '@claude-status-theme')"
 set_default_option '@claude-status-auto-contrast' 'on'
 set_default_option '@claude-status-show-stopped' 'off'
 set_default_option '@claude-tmux-status-generation' '0'
+set_default_option '@claude-search-key' '/'
 
 tmux set-option -gq '@claude-tmux-status' \
     "#('$CURRENT_DIR/scripts/render-status.sh' '#{window_id}' '#{@claude-tmux-status-generation}' '#{@claude-status-embedded}')"
 
 configure_format_markers
+search_key="$(tmux show-option -gqv '@claude-search-key')"
+bound_key="$(tmux show-option -gqv '@claude-search-bound-key')"
+if [ -n "$bound_key" ] && [ "$bound_key" != "$search_key" ]; then
+    binding="$(tmux list-keys -T prefix "$bound_key" 2>/dev/null || true)"
+    case "$binding" in
+        *"$CURRENT_DIR/scripts/search-popup.sh"*)
+            tmux unbind-key "$bound_key" 2>/dev/null || true
+            ;;
+    esac
+fi
+if [ -n "$search_key" ] && [ "$search_key" != off ]; then
+    tmux bind-key "$search_key" display-popup -E -w '85%' -h '75%' \
+        -T ' Claude Search ' -s 'bg=#303446' -S 'fg=#51576d,bg=#303446' \
+        "$CURRENT_DIR/scripts/search-popup.sh"
+    tmux set-option -gq '@claude-search-bound-key' "$search_key"
+else
+    tmux set-option -gq '@claude-search-bound-key' ''
+fi
+
 
 if command -v node >/dev/null 2>&1; then
     if ! node "$CURRENT_DIR/scripts/configure-hooks.js" install \

@@ -31,6 +31,10 @@ case "$inactive:$active" in
     *"$marker"*:*"$marker"*) ;;
     *) exit 1 ;;
 esac
+search_binding=$(tmux -L "$SOCKET" list-keys -T prefix /)
+case "$search_binding" in *search-popup.sh*) ;; *) exit 1 ;; esac
+case "$search_binding" in *'Claude Search'*'#303446'*) ;; *) exit 1 ;; esac
+
 
 # Reloading the plugin must not append another marker.
 tmux -L "$SOCKET" run-shell "$ROOT/claude-tmux-status.tmux"
